@@ -1,0 +1,5 @@
+venv/
+__pycache__/
+.env
+pioneer.db
+constants.py
