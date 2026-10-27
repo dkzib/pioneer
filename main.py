@@ -5,9 +5,10 @@ from aiogram.enums import ChatType
 import asyncio
 from db import db_init, db_add, get_all_items, update_items_status, get_info_out_items, get_info_low_items
 from genai_stop import parse_stoplist_message
-from constants import DOCUMENTS_CHAT_ID, STOP_LIST_CHAT_ID, BOT_TOKEN, ID_STOP_LIST
+from keys import DOCUMENTS_CHAT_ID, STOP_LIST_CHAT_ID, BOT_TOKEN, ID_STOP_LIST
 from genai_doc import parse_receipt_image
 import io
+from log import logger
 
 
 bot = Bot(token=BOT_TOKEN)
@@ -17,6 +18,10 @@ dp = Dispatcher()
 @dp.message(Command("stoplist"))
 async def cmd_stoplist(message: Message):
     """Команда /stoplist для вывода актуальных стопов в чат."""
+
+    user = message.from_user.full_name
+    logger.info(f'Пользователь [{user}] ввёл команду /stoplist.')
+
     out_items = get_info_out_items()
     low_items = get_info_low_items()
 
@@ -41,19 +46,19 @@ async def cmd_stoplist(message: Message):
 
 
 
-
-
-
-
 @dp.message(F.chat.id == STOP_LIST_CHAT_ID)
 async def handle_group_message(message: types.Message):
     """Работа с сообщениями беседы СТОП ЛИСТ."""
 
     if message.chat.type in (ChatType.GROUP, ChatType.SUPERGROUP):
-        print(f"Сообщение от {message.from_user.full_name}: {message.text}")
 
+        user = message.from_user.full_name
         username = message.from_user.first_name
         text = message.text
+        logger.info(
+            f'Сообщение [{text}] от пользователя [{user}]'
+        )
+        #print(f"Сообщение от {message.from_user.full_name}: {message.text}")
 
         if message.message_thread_id == ID_STOP_LIST:
             db_add(
@@ -82,14 +87,18 @@ async def handle_group_message(message: types.Message):
 
             conf = parsed.get('confidence')  # уверенность бота в ответе
             if conf <= 7:
-                print(f'бот неуверен в ответе!!! conf = {conf}.')
+                logger.warning(f'Бот не уверен! conf = {conf}')
+                #print(f'бот неуверен в ответе!!! conf = {conf}.')
 
 
 @dp.message((F.chat.id == DOCUMENTS_CHAT_ID) & (F.photo))
 async def handle_document_chat_message(message: types.Message):
     """Работа с сообщениями беседы ОТЧЕТЫ."""
 
+    username = message.from_user.full_name
+    logger.info(f'Пользователь [{username}] отправил фото в беседу "отчёты".')
     try:  # скачивание и обработка фото в нейронке
+        logger.info('Попытка скачивания и обработки фото через gAPI.')
         available_items = get_all_items()
         photo = message.photo[-1]
         file_info = await bot.get_file(photo.file_id)
@@ -114,17 +123,21 @@ async def handle_document_chat_message(message: types.Message):
                 status=2,
                 username=username
             )
-            print(f"📦 Обновлены статусы в БД для: {items_to_update}")
+            logger.info('Обновлены статусы в БД.')
+            #print(f"📦 Обновлены статусы в БД для: {items_to_update}")
         else:
-            print('Накладная не распознана!')
+            logger.warning('Накладная не распознана!')
+            #print('Накладная не распознана!')
 
     except Exception as e:
-        print(f"Ошибка при обработке чека: {e}")
+        logger.error(f'Непредвиденная ошибка при обработке чека. Ошибка: {e}')
+        #print(f"Ошибка при обработке чека: {e}")
         #  await message.react([types.ReactionTypeEmoji(emoji="❌")])
         await message.reply("Не удалось обработать изображение. Убедитесь, что чек четкий.")
 
 
 async def main():
+    logger.info('Бот запущен.')
     print("Бот запущен...")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

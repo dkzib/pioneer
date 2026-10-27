@@ -2,10 +2,10 @@ import sqlite3
 from datetime import datetime
 import os
 import json
+from log import logger
 
 
 def db_init():
-    #item_data = ['стакан 02', 'стакан 03', 'стакан 04', 'молоко классическое', 'молоко безлактозное']
 
     connection = sqlite3.connect('pioneer.db')
 
@@ -50,13 +50,16 @@ def db_init():
                         INSERT INTO items (item, status) 
                         VALUES (?, ?)
                     ''', (item_name, item_status))
-                        
-            print(f"🚀 Первый запуск: база заполнена из фикстуры ({len(fixtures_data)} поз.)")
-        else:
-            print(f"⚠️ Файл фикстуры {fixture_path} не найден!")
-    else:
-        print("✅ База уже инициализирована, пропускаем загрузку фикстуры.")
 
+            logger.info(f'БД не обнаружена. Создание и заполнение из фикстуры.')
+            logger.info(f'Из фикстуры загружено {len(fixtures_data)} позиций.')
+            #print(f"🚀 Первый запуск: база заполнена из фикстуры ({len(fixtures_data)} поз.)")
+        else:
+            logger.critical(f'Файл фикстуры {fixture_path} не найден!')
+            #print(f"⚠️ Файл фикстуры {fixture_path} не найден!")
+    else:
+        logger.info(f'Файл БД найден. Пропуск загрузки фикстуры.')
+        #print("✅ База уже инициализирована, пропускаем загрузку фикстуры.")
 
     connection.commit()
     connection.close()
