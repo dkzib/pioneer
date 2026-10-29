@@ -1,7 +1,8 @@
-import sqlite3
-from datetime import datetime
 import os
+import sqlite3
 import json
+
+from datetime import datetime
 from log import logger
 
 
@@ -36,30 +37,27 @@ def db_init():
     cursor.execute('SELECT COUNT(*) FROM items')
     count = cursor.fetchone()[0]
 
-    if count == 0:
+    if count == 0:  # применяем фикстуру, если нет файла БД
         fixture_path = 'fixtures.json'
         if os.path.exists(fixture_path):
             with open(fixture_path, 'r', encoding='utf-8') as f:
                 fixtures_data = json.load(f)
-                
+
                 for entry in fixtures_data:
                     item_name = entry.get("item")
-                    item_status = entry.get("status", 2) # Берем статус из фикстуры (по умолчанию 2)
-                    
+                    item_status = entry.get("status", 2)
+
                     cursor.execute('''
-                        INSERT INTO items (item, status) 
+                        INSERT INTO items (item, status)
                         VALUES (?, ?)
                     ''', (item_name, item_status))
 
-            logger.info(f'БД не обнаружена. Создание и заполнение из фикстуры.')
+            logger.info('БД не обнаружена. Создание и заполнение из фикстуры.')
             logger.info(f'Из фикстуры загружено {len(fixtures_data)} позиций.')
-            #print(f"🚀 Первый запуск: база заполнена из фикстуры ({len(fixtures_data)} поз.)")
         else:
             logger.critical(f'Файл фикстуры {fixture_path} не найден!')
-            #print(f"⚠️ Файл фикстуры {fixture_path} не найден!")
     else:
-        logger.info(f'Файл БД найден. Пропуск загрузки фикстуры.')
-        #print("✅ База уже инициализирована, пропускаем загрузку фикстуры.")
+        logger.info('Файл БД найден. Пропуск загрузки фикстуры.')
 
     connection.commit()
     connection.close()
@@ -70,7 +68,8 @@ def db_add(username, message, user_id, reply_message, datetime, message_id):
     cursor = connection.cursor()
 
     cursor.execute('''
-    INSERT INTO users (username, message, user_id, reply_message, datetime, message_id)
+    INSERT INTO users
+    (username, message, user_id, reply_message, datetime, message_id)
     VALUES (?, ?, ?, ?, ?, ?)
     ''', (username, message, user_id, reply_message, datetime, message_id))
 
@@ -87,11 +86,6 @@ def get_info_db():
     for row in rows:
         print(row)
     connection.close()
-
-
-#  0 - отсутствует на складе (стоп)
-#  1 - заканчивается на складе (мало)
-#  2 - есть на складе
 
 
 def get_all_items():
@@ -113,8 +107,6 @@ def update_items_status(items, status, username):
     cursor = connection.cursor()
     now_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # updated = []
-
     for item in items:
         cursor.execute(
             '''
@@ -124,12 +116,9 @@ def update_items_status(items, status, username):
             ''',
             (status, now_time, username, item)
         )
-        # if cursor.rowcount > 0:
-        #     updated.append(item)
 
     connection.commit()
     connection.close()
-    # return updated
 
 
 def get_info_out_items():

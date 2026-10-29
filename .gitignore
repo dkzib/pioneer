@@ -2,6 +2,4 @@ venv/
 __pycache__/
 .env
 pioneer.db
-keys.py
 bot.log
-receipt.jpg
