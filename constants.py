@@ -1,3 +1,22 @@
+from google.genai import types
+
+
+def get_gemini_config(model_name):
+    """Возвращает адаптированный конфиг под конкретную модель."""
+    if "3.1" in model_name:
+        # Для 3.1: температура 0.0 и явный сброс thinking
+        return types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.0,
+            thinking_config=types.ThinkingConfig(thinking_budget=0)
+        )
+
+    # Для 3.5 (и других моделей): базовый JSON-режим без конфликтующих флагов
+    return types.GenerateContentConfig(
+        response_mime_type="application/json",
+        temperature=0.0
+    )
+
 
 def get_doc_prompt(known_items):
     return f"""
@@ -49,6 +68,7 @@ def get_stop_prompt(known_items, message_text):
     ВАЖНЫЕ ПРАВИЛА:
     - Слова "много", "очень много", "полно", "в достатке" — это ВСЕГДА категория "in_stock", ни в коем случае НЕ "running_low".
     - Если бариста просто пишет "стаканы 03" без контекста дефицита в чате стоп-листа, по умолчанию считай это "out_of_stock".
+    - Если бариста пишет "стаканы 03" без уточнения, то имеются ввиду "стаканы 03 горячие". Такая же логика для стаканов 02.
     - Используй названия позиций ТОЛЬКО из списка зарегистрированных товаров.
     - Если категория пустая, верни пустой список [].
     - Запрещено отправлять в стоп ВСЮ группу товаров по обобщенному слову, если прямо не сказано «всё молоко».

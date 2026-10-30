@@ -16,7 +16,7 @@ from db import (
 )
 from genai_stop import parse_stoplist_message
 from genai_doc import parse_receipt_image
-from keys import DOCUMENTS_CHAT_ID, STOP_LIST_CHAT_ID, ID_STOP_LIST
+from settings import DOCUMENTS_CHAT_ID, STOP_LIST_CHAT_ID, ID_STOP_LIST
 from log import logger
 
 
@@ -77,6 +77,14 @@ async def handle_group_message(message: types.Message):
             available_items = get_all_items()  # вся номенклатура в переменной
 
             parsed = parse_stoplist_message(text, available_items)  # вызов ИИ
+
+            conf = parsed.get('confidence', 0)  # уверенность в ответе
+            if conf <= 7:                       # реакция на сообщение
+                logger.warning(                 # если низкая уверенность
+                    f'Бот не уверен! conf = {conf}. Изменения в БД отменены.'
+                )
+                await message.react([types.ReactionTypeEmoji(emoji="🤷‍♂️")])
+                return
 
             stop_items = parsed.get("out_of_stock", [])  # распарсинг ответа ИИ
             low_items = parsed.get("running_low", [])

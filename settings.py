@@ -1,3 +1,5 @@
+CURRENT_MODEL = "gemini-3.1-flash-lite"  # "gemini-3.1-flash-lite" gemini-3.5-flash-lite
+
 STOP_LIST_CHAT_ID = -1003915106819      # id беседы "пионер" в TG
 DOCUMENTS_CHAT_ID = -1004435754021      # id беседы "отчеты" в TG
 

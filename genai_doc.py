@@ -6,11 +6,11 @@ import os
 from dotenv import load_dotenv
 from log import logger
 from google import genai
-from google.genai import types
 from google.genai.errors import APIError
 from PIL import Image
 
-from constants import get_doc_prompt
+from constants import get_doc_prompt, get_gemini_config
+from settings import CURRENT_MODEL
 
 
 load_dotenv()
@@ -27,11 +27,9 @@ def parse_receipt_image(image_bytes: io.BytesIO, known_items) -> dict:
         try:
             logger.info(f'Попытка [{attempt}/5] запроса к gAPI.')
             response = ai_client.models.generate_content(
-                model="gemini-3.5-flash-lite",
+                model=CURRENT_MODEL,
                 contents=[image, get_doc_prompt(known_items)],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                ),
+                config=get_gemini_config(CURRENT_MODEL)
             )
             parsed_data = json.loads(response.text)
             formatted_json = json.dumps(

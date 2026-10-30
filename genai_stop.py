@@ -5,10 +5,10 @@ import os
 from dotenv import load_dotenv
 from log import logger
 from google import genai
-from google.genai import types
 from google.genai.errors import APIError
 
-from constants import get_stop_prompt
+from constants import get_stop_prompt, get_gemini_config
+from settings import CURRENT_MODEL
 
 
 load_dotenv()
@@ -22,15 +22,12 @@ def parse_stoplist_message(message_text, known_items):
         try:
             logger.info(f'Попытка [{attempt}/5] запроса к gAPI.')
             response = ai_client.models.generate_content(
-                model="gemini-3.5-flash-lite",
+                model=CURRENT_MODEL,
                 contents=get_stop_prompt(
                     known_items=known_items,
                     message_text=message_text
                 ),
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.0
-                ),
+                config=get_gemini_config(CURRENT_MODEL),
             )
 
             parsed_data = json.loads(response.text)
